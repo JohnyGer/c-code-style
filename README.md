@@ -1,1090 +1,382 @@
-# Recommended C style and coding rules
-
+# Recommended C style and coding rules for embedded system
 This document describes C code style used by DC Vostok in his projects and libraries.
 
-## Table of Contents
+# Recommended C Style and Coding Rules (Barr-C:2018 and MISRA C:2023 Compliant)
 
-- [Recommended C style and coding rules](#recommended-c-style-and-coding-rules)
-  - [Table of Contents](#table-of-contents)
-  - [The single most important rule](#the-single-most-important-rule)
-  - [General rules](#general-rules)
-  - [Comments](#comments)
-  - [Functions](#functions)
-  - [Variables](#variables)
-  - [Structures, enumerations, typedefs](#structures-enumerations-typedefs)
-  - [Compound statements](#compound-statements)
-    - [Switch statement](#switch-statement)
-  - [Macros and preprocessor directives](#macros-and-preprocessor-directives)
-  - [Documentation](#documentation)
-  - [Header/source files](#headersource-files)
-  - [.clang-format file](#clang-format-file)
+## General Rules
 
-## The single most important rule
+These rules align with common stylistic requirements in both standards to ensure safety, security, and maintainability.
 
-Let's start with the quote from [GNOME developer](https://developer.gnome.org/programming-guidelines/stable/c-coding-style.html.en) site.
+### Language Standard
+- **Language Standard:** Use the `C11` standard (ISO/IEC 9899:2011) or later. MISRA C:2023 explicitly supports C11 and C18 features, providing guidelines for safe use of features like atomics and multithreading.
 
-> The single most important rule when writing code is this: *check the surrounding code and try to imitate it*.
->
-> As a maintainer it is dismaying to receive a patch that is obviously in a different coding style to the surrounding code. This is disrespectful, like someone tromping into a spotlessly-clean house with muddy shoes.
->
-> So, whatever this document recommends, if there is already written code and you are patching it, keep its current style consistent even if it is not your favorite style.
+### Formatting and Indentation
+- **Indentation:** Use 4 spaces per indent level. Tabs are forbidden.
+- **Keywords:** Use 1 space between keyword and opening bracket.
+- **Functions:** No space between function name and opening bracket.
 
-## General rules
+### Naming Conventions
 
-Here are listed most obvious and important general rules. Please check them carefully before you continue with other chapters.
+**CRITICAL:** The following naming conventions are mandatory for compliance with **Barr-C** and **MISRA**:
 
-- Use `C99` standard
-- Do not use tabs, use spaces instead
-- Use `4` spaces per indent level
-- Use `1` space between keyword and opening bracket
+1. `_` (underscore) as first or last character is reserved for C standard library
+2. Avoid names differing only in case or underscore presence
+3. Function and variable names must be entirely lowercase
+
+#### Identifier Types and Conventions
+- **Variables:** `snake_case`, lowercase (Example: `sensor_value`, `is_valid`)  
+  Rule: Barr-C 7.1f, 7.1h; MISRA C:2023 Rules 5.1-5.5
+- **Constants/Macros:** `UPPER_SNAKE_CASE` (Example: `MAX_BAUD_RATE`)  
+  Rule: Barr-C 6.1f
+- **Functions:** `snake_case`, lowercase (Example: `system_init()`)  
+  Rule: Barr-C 6.1e, 6.1g
+- **Types/Structs/Enums:** `snake_case` with `_t` suffix (Example: `sensor_data_t`)  
+  Rule: Barr-C 5.1a
+- **Files:** `snake_case`, lowercase with `.c`/`.h` suffix  
+  Rule: Barr-C 2.1
+
+### Braces and Spacing
+- **Opening curly bracket always on same line as keyword**
+- **Single space before/after operators, after commas**
+
 ```c
 /* OK */
-if (condition)
-while (condition)
-for (init; condition; step)
-do {} while (condition)
+if (condition) {
+    do_something();
+} else {
+    do_something_else();
+}
+
+a = 3 + 4;              /* OK */
+func_name(5, 4);        /* OK */
 
 /* Wrong */
-if(condition)
-while(condition)
-for(init;condition;step)
-do {} while(condition)
+if (condition){         /* Wrong brace position */
+a=3+4;                  /* Wrong spacing */
+func_name(4,3);         /* Wrong spacing */
 ```
 
-- Do not use space between function name and opening bracket
+### Variable Initialization
+**CRITICAL:** Every variable must be initialized before first use (Barr-C:2018 Rule 3.2).
+
 ```c
-int32_t a = sum(4, 3);              /* OK */
-int32_t a = sum (4, 3);             /* Wrong */
+/* OK - initialization in declaration */
+static int32_t global_counter = 0;
+static int32_t global_status = ERROR_NONE;
+
+/* Wrong - uninitialized variables */
+static int32_t a;       /* Wrong */
+static int32_t b = 4;   /* Wrong */
 ```
 
-- Never use `__` or `_` prefix for variables/functions/macros/types. This is reserved for C language itself
-    - Prefer `prv_` name prefix for strictly module-private functions
-- Use only lowercase characters for variables/functions/macros/types with optional underscore `_` char
-- Opening curly bracket is always at the same line as keyword (`for`, `while`, `do`, `switch`, `if`, ...)
+### Variable Declaration
+- **Declare same type variables in same line**
+- **Declare in order: custom structs → integers → floating point**
+- **Always declare at beginning of block**
+
 ```c
-size_t i;
-for (i = 0; i < 5; ++i) {           /* OK */
-}
-for (i = 0; i < 5; ++i){           /* Wrong */
-}
-for (i = 0; i < 5; ++i)             /* Wrong */
-{
-}
-```
-
-- Use single space before and after comparison and assignment operators
-```c
-int32_t a;
-a = 3 + 4;              /* OK */
-for (a = 0; a < 5; ++a) /* OK */
-a=3+4;                  /* Wrong */
-a = 3+4;                /* Wrong */
-for (a=0;a<5;++a)       /* Wrong */
-```
-
-- Use single space after every comma
-```c
-func_name(5, 4);        /* OK */
-func_name(4,3);         /* Wrong */
-```
-
-- Do not initialize `static` and `global` variables to `0` (or `NULL`), let compiler do it for you
-```c
-static int32_t a;       /* OK */
-static int32_t b = 4;   /* OK */
-static int32_t a = 0;   /* Wrong */
-
-void my_func(void) {
-    static int32_t* ptr;/* OK */
-    static char abc = 0;/* Wrong */
-}
-```
-
-- Declare all local variables of the same type in the same line
-```c
-void my_func(void) {
-    char a;             /* OK */
-    char a, b;          /* OK */
-    char b;             /* Wrong, variable with char type already exists */
-}
-```
-
-- Declare local variables in order
-    1. Custom structures and enumerations
-    2. Integer types, wider unsigned type first
-    3. Single/Double floating point
-```c
-int my_func(void) {
-    /* 1 */
-    my_struct_t my;     /* First custom structures */
-    my_struct_ptr_t* p; /* Pointers too */
-
-    /* 2 */
+void
+my_func(void) {
+    /* Order: custom structs, integers, floats */
+    my_struct_t my;     
     uint32_t a;
     int32_t b;
-    uint16_t c;
-    int16_t g;
     char h;
-    /* ... */
-
-    /* 3 */
     double d;
     float f;
 }
 ```
 
-- Always declare local variables at the beginning of the block, before first executable statement
+### Data Types
+- **Use stdint.h types except char, float, double**
+- **Boolean types:** MISRA C:2023 supports `_Bool`; stdbool.h allowed for portability
+- **Never compare against `true`**
+- **Always compare pointers against `NULL`**
 
-- Declare counter variables in `for` loop
 ```c
 /* OK */
-for (size_t i = 0; i < 10; ++i)
-
-/* OK, if you need counter variable later */
-size_t i;
-for (i = 0; i < 10; ++i) {
-    if (...) {
-        break;
-    }
-}
-if (i == 10) {
-
-}
-
-/* Wrong */
-size_t i;
-for (i = 0; i < 10; ++i) ...
-```
-
-- Avoid variable assignment with function call in declaration, except for single variables
-```c
-void a(void) {
-    /* Avoid function calls when declaring variable */
-    int32_t a, b = sum(1, 2);
-
-    /* Use this */
-    int32_t a, b;
-    b = sum(1, 2);
-
-    /* This is ok */
-    uint8_t a = 3, b = 4;
-}
-```
-
-- Except `char`, `float` or `double`, always use types declared in `stdint.h` library, eg. `uint8_t` for `unsigned 8-bit`, etc.
-- Do not use `stdbool.h` library. Use `1` or `0` for `true` or `false` respectively
-```c
-/* OK */
-uint8_t status;
-status = 0;
-
-/* Wrong */
+uint8_t status = 0;
 #include <stdbool.h>
-bool status = true;
+bool status = false;
+
+if (ptr == NULL) {      /* OK */
+if (check_func()) {     /* OK - no true comparison */
 ```
 
-- Never compare against `true`, eg. `if (check_func() == 1)`, use `if (check_func()) { ... }`
-- Always compare pointers against `NULL` value
+### STRICTLY FORBIDDEN: Dynamic Memory and VLA
+**CRITICAL:** MISRA C:2023 Rule 21.3 strictly forbids dynamic memory allocation.
+
 ```c
-void* ptr;
-
-/* ... */
-
-/* OK, compare against NULL */
-if (ptr == NULL || ptr != NULL) {
-
+/* Wrong - violates MISRA C:2023 Rule 21.3 */
+void my_func(size_t n) {
+    int32_t* arr = malloc(sizeof(*arr) * n);  /* Forbidden */
+    free(arr);                                 /* Forbidden */
 }
 
-/* Wrong */
-if (ptr || !ptr) {
+/* Wrong - VLA forbidden */
+void my_func(size_t n) {
+    int32_t arr[n];  /* Forbidden */
+}
 
+/* CORRECT - use static allocation */
+void my_func(size_t n) {
+    static int32_t arr[MAX_SIZE];  /* OK */
+    /* Use with bounds checking */
 }
 ```
 
-- Always use *pre-increment (and decrement respectively)* instead of *post-increment (and decrement respectively)*
+### Boolean and Comparison Rules
+- **Compare variables against zero except boolean types**
+- **Never compare boolean variables against 0 or 1. Use `!` instead**
+
 ```c
-int32_t a = 0;
-...
+size_t length = 5;      /* Counter variable */
+uint8_t is_ok = 0;      /* Boolean variable */
 
-a++;            /* Wrong */
-++a;            /* OK */
-
-for (size_t j = 0; j < 10; ++j) {}  /* OK */
+if (length > 0)         /* OK */
+if (is_ok)              /* OK - boolean */
+if (!is_ok)             /* OK - boolean negation */
+if (is_ok == 1)         /* Wrong! */
 ```
-
-- Always use `size_t` for length or size variables
-- Always use `const` for pointer if function should not modify memory pointed to by `pointer`
-- Always use `const` for function parameter or variable, if it should not be modified
-```c
-
-/* When d could be modified, data pointed to by d could not be modified */
-void my_func(const void* d) {
-
-}
-
-/* When d and data pointed to by d both could not be modified */
-void my_func(const void* const d) {
-
-}
-
-/* Not required, it is advised */
-void my_func(const size_t len) {
-
-}
-
-/* When d should not be modified inside function, only data pointed to by d could be modified */
-void my_func(void* const d) {
-
-}
-```
-
-- When function may accept pointer of any type, always use `void *`, do not use `uint8_t *`
-    - Function must take care of proper casting in implementation
-```c
-/*
- * To send data, function should not modify memory pointed to by `data` variable
- * thus `const` keyword is important
- *
- * To send generic data (or to write them to file)
- * any type may be passed for data,
- * thus use `void *`
- */
-/* OK example */
-void send_data(const void* data, size_t len) { /* OK */
-    /* Do not cast `void *` or `const void *` */
-    const uint8_t* d = data;/* Function handles proper type for internal usage */
-}
-
-void send_data(const void* data, int len) {    /* Wrong, not not use int */
-}
-```
-
-- Always use brackets with `sizeof` operator
-- Never use *Variable Length Array* (VLA) and `malloc` `free`
-
-- Always compare variable against zero, except if it is treated as `boolean` type
-- Never compare `boolean-treated` variables against zero or one. Use NOT (`!`) instead
-```c
-size_t length = 5;  /* Counter variable */
-uint8_t is_ok = 0;  /* Boolean-treated variable */
-if (length)         /* Wrong, length is not treated as boolean */
-if (length > 0)     /* OK, length is treated as counter variable containing multi values, not only 0 or 1 */
-if (length == 0)    /* OK, length is treated as counter variable containing multi values, not only 0 or 1 */
-
-if (is_ok)          /* OK, variable is treated as boolean */
-if (!is_ok)         /* OK, -||- */
-if (is_ok == 1)     /* Wrong, never compare boolean variable against 1! */
-if (is_ok == 0)     /* Wrong, use ! for negative check */
-```
-
-- Always use `/* comment */` for comments, even for *single-line* comment
-- Always include check for `C++` with `extern` keyword in header file
-- Every function must include *doxygen-enabled* comment, even if function is `static`
-- Use English names/text for functions, variables, comments
-- Use *lowercase* characters for variables
-- Use *underscore* if variable contains multiple names, eg. `force_redraw`. Do not use `forceRedraw`
-- Never cast function returning `void *`, eg. `uint8_t* ptr = (uint8_t *)func_returning_void_ptr();` as `void *` is safely promoted to any other pointer type
-    - Use `uint8_t* ptr = func_returning_void_ptr();` instead
-- Always use `<` and `>` for C Standard Library include files, eg. `#include <stdlib.h>`
-- Always use `""` for custom libraries, eg. `#include "my_library.h"`
-- When casting to pointer type, always align asterisk to type, eg. `uint8_t* t = (uint8_t*)var_width_diff_type`
-- Always respect code style already used in project or library
 
 ## Comments
+- **Always use `/* comment */`, never `//`**
+- **Multi-line: space+asterisk for each line**
+- **Use 12*4 spaces offset for comments**
 
-- Comments starting with `//` are not allowed. Always use `/* comment */`, even for single-line comment
 ```c
-//This is comment (wrong)
-/* This is comment (ok) */
-```
-
-- For multi-line comments use `space+asterisk` for every line
-```c
-/*
- * This is multi-line comments,
- * written in 2 lines (ok)
- */
-
-/**
- * Wrong, use double-asterisk only for doxygen documentation
- */
-
-/*
-* Single line comment without space before asterisk (wrong)
-*/
-
-/*
- * Single line comment in multi-line configuration (wrong)
- */
-
 /* Single line comment (ok) */
-```
 
-- Use `12` indents (`12 * 4` spaces) offset when commenting. If statement is larger than `12` indents, make comment `4-spaces` aligned (examples below) to next available indent
-```c
-void my_func(void) {
-    char a, b;
+/*
+ * Multi-line comment (ok)
+ * Proper formatting
+ */
 
-    a = call_func_returning_char_a(a);          /* This is comment with 12*4 spaces indent from beginning of line */
-    b = call_func_returning_char_a_but_func_name_is_very_long(a);   /* This is comment, aligned to 4-spaces indent */
-}
+/* Comment aligned to 12*4 spaces */
 ```
 
 ## Functions
+- **External functions MUST have prototypes**
+- **Function names lowercase with optional underscore**
+- **Align asterisk to return type for pointer functions**
+- **Return type on separate line in implementation**
 
-- Every function which may have access from outside its module, must include function *prototype* (or *declaration*)
-- Function name must be lowercase, optionally separated with underscore `_` character
 ```c
 /* OK */
 void my_func(void);
-void myfunc(void);
+const char* get_string(void);
 
-/* Wrong */
-void MYFunc(void);
-void myFunc();
-```
-
-- When function returns pointer, align asterisk to return type
-```c
-/* OK */
-const char* my_func(void);
-my_struct_t* my_func(int32_t a, int32_t b);
-
-/* Wrong */
-const char *my_func(void);
-my_struct_t * my_func(void);
-```
-- Align all function prototypes (with the same/similar functionality) for better readability
-```c
-/* OK, function names aligned */
-void        set(int32_t a);
-my_type_t   get(void);
-my_ptr_t*   get_ptr(void);
-
-/* Wrong */
-void set(int32_t a);
-const char * get(void);
-```
-
-- Function implementation must include return type and optional other keywords
-```c
-/* OK */
-int32_t foo(void) {
+int32_t
+foo(void) {
     return 0;
 }
 
-/* OK */
-static const char* get_string(void) {
-    return "Hello world!\r\n";
-}
+/* Wrong */
+void MYFunc(void);              /* Wrong case */
+const char *get_string(void);   /* Wrong asterisk alignment */
 ```
 
 ## Variables
+- **Variable names lowercase with optional underscore**
+- **Group local variables by type**
+- **Declare pointer variables with asterisk aligned to type**
 
-- Make variable name all lowercase with optional underscore `_` character
 ```c
 /* OK */
-int32_t a;
 int32_t my_var;
-int32_t myvar;
+char* ptr;
 
 /* Wrong */
-int32_t A;
-int32_t myVar;
-int32_t MYVar;
+int32_t myVar;      /* Wrong case */
+char *ptr;          /* Wrong asterisk alignment */
 ```
 
-- Group local variables together by `type`
-```c
-void foo(void) {
-    int32_t a, b;   /* OK */
-    char a;
-    char b;         /* Wrong, char type already exists */
-}
-```
+## Structures, Enumerations, Typedefs
+- **Structure/enum names lowercase with optional underscore**
+- **Structure members lowercase**
+- **Enumeration members uppercase**
+- **Use `_t` suffix for typedef**
 
-- Do not declare variable after first executable statement
-```c
-void foo(void) {
-    int32_t a;
-    a = bar();
-    int32_t b;      /* Wrong, there is already executable statement */
-}
-```
-
-- You may declare new variables inside next indent level
-```c
-int32_t a, b;
-a = foo();
-if (a) {
-    int32_t c, d;   /* OK, c and d are in if-statement scope */
-    c = foo();
-    int32_t e;      /* Wrong, there was already executable statement inside block */
-}
-```
-
-- Declare pointer variables with asterisk aligned to type,it has to contain `_ptr` suffix after its name.
 ```c
 /* OK */
-char* a_ptr;
-
-/* Wrong */
-char *a;
-char * a;
-```
-
-- When declaring multiple pointer variables, you may declare them with asterisk aligned to variable name
-```c
-/* OK */
-char *p_ptr, *n_ptr;
-```
-
-## Structures, enumerations, typedefs
-
-- Structure or enumeration name must be lowercase with optional underscore `_` character between words
-- Structure or enumeration may contain `typedef` keyword
-- All structure members must be lowercase
-- Structure/enumeration must follow doxygen documentation syntax
-
-When structure is declared, it may use one of `3` different options:
-
-1. When structure is declared with *name only*, it *must not* contain `_t` suffix after its name.
-```c
-struct struct_name {
-    char* a;
-    char b;
-};
-```
-2. When structure is declared with *typedef only*, it *has to* contain `_t` suffix after its name.
-```c
 typedef struct {
-    char* a;
-    char b;
-} struct_name_t;
-```
-3. When structure is declared with *name and typedef*, it *must not* contain `_t` for basic name and it *has to* contain `_t` suffix after its name for typedef part.
-```c
-typedef struct struct_name {
-    char* a;
-    char b;
-    char c;
-} struct_name_t;
-```
+    char* name;
+    int32_t value;
+} config_t;
 
-Examples of bad declarations and their suggested corrections
-```c
-/* a and b must be separated to 2 lines */
-/* Name of structure with typedef must include _t suffix */
-typedef struct {
-    int32_t a, b;
-} a;
-
-/* Corrected version */
-typedef struct {
-    int32_t a;
-    int32_t b;
-} a_t;
-
-/* Wrong name, it must not include _t suffix */
-struct name_t {
-    int32_t a;
-    int32_t b;
-};
-
-/* Wrong parameters, must be all uppercase */
 typedef enum {
-    E_MY_ENUM_TESTA,
-    e_my_enum_testb,
-} e_my_enum_t;
+    STATE_OK,
+    STATE_ERROR
+} state_t;
+
+/* Wrong */
+typedef struct Config {  /* Wrong case */
+    char* Name;          /* Wrong case */
+} config;
 ```
 
-- Enum declarations has to contain `e_` prefix before name.
-- All enumeration members must be uppercase and contain prefix with his name and `E_`.
-```c
-typedef enum {
-    E_MY_ENUM_TEST_A,
-    E_MY_ENUM_TEST_B
-} e_my_enum_t;
-```
+### Structure Declaration Options
+1. **Name only:** No `_t` suffix
+2. **Typedef only:** Must have `_t` suffix  
+3. **Name + typedef:** No `_t` for name, `_t` for typedef
 
-- When initializing structure on declaration, use `C99` initialization style
 ```c
-/* OK */
-a_t a = {
-    .a = 4,
-    .b = 5,
+/* Option 1 - name only */
+struct config {
+    int32_t value;
 };
 
-/* Wrong */
-a_t a = {1, 2};
-```
-
-- When new typedef is introduced for function handles, use `_fn` suffix
-```c
-/* Function accepts 2 parameters and returns uint8_t */
-/* Name of typedef has `_fn` suffix */
-typedef uint8_t (*my_func_typedef_fn)(uint8_t p1, const char* p2);
-```
-
-## Compound statements
-
-- Every compound statement must include opening and closing curly bracket, even if it includes only `1` nested statement
-- Every compound statement must include single indent; when nesting statements, include `1` indent size for each nest
-```c
-/* OK */
-if (c) {
-    do_a();
-} else {
-    do_b();
-}
-
-/* Wrong */
-if (c)
-    do_a();
-else
-    do_b();
-
-/* Wrong */
-if (c) do_a();
-else do_b();
-```
-
-- In case of `if` or `if-else-if` statement, `else` must be in the same line as closing bracket of first statement
-```c
-/* OK */
-if (a) {
-
-} else if (b) {
-
-} else {
-
-}
-
-/* Wrong */
-if (a) {
-
-}
-else {
-
-}
-
-/* Wrong */
-if (a) {
-
-}
-else
-{
-
-}
-```
-
-- In case of `do-while` statement, `while` part must be in the same line as closing bracket of `do` part
-```c
-/* OK */
-do {
-    int32_t a;
-    a = do_a();
-    do_b(a);
-} while (check());
-
-/* Wrong */
-do
-{
-/* ... */
-} while (check());
-
-/* Wrong */
-do {
-/* ... */
-}
-while (check());
-```
-
-- Indentation is required for every opening bracket
-```c
-if (a) {
-    do_a();
-} else {
-    do_b();
-    if (c) {
-        do_c();
-    }
-}
-```
-
-- Never do compound statement without curly bracket, even in case of single statement. Examples below show bad practices
-```c
-if (a) do_b();
-else do_c();
-
-if (a) do_a(); else do_b();
-```
-
-- Empty `while`, `do-while` or `for` loops must include brackets
-```c
-/* OK */
-while (is_register_bit_set()) {}
-
-/* Wrong */
-while (is_register_bit_set());
-while (is_register_bit_set()) { }
-while (is_register_bit_set()) {
-}
-```
-
-- If `while` (or `for`, `do-while`, etc) is empty (it can be the case in embedded programming), use empty single-line brackets
-```c
-/* Wait for bit to be set in embedded hardware unit
-uint32_t* addr = HW_PERIPH_REGISTER_ADDR;
-
-/* Wait bit 13 to be ready */
-while (*addr & (1 << 13)) {}        /* OK, empty loop contains no spaces inside curly brackets */
-while (*addr & (1 << 13)) { }       /* Wrong */
-while (*addr & (1 << 13)) {         /* Wrong */
-
-}
-while (*addr & (1 << 13));          /* Wrong, curly brackets are missing. Can lead to compiler warnings or unintentional bugs */
-```
-- Always prefer using loops in this order: `for`, `do-while`, `while`
-- Avoid incrementing variables inside loop block if possible, see examples
-
-```c
-/* Not recommended */
-int32_t a = 0;
-while (a < 10) {
-    .
-    ..
-    ...
-    ++a;
-}
-
-/* Better */
-for (size_t a = 0; a < 10; ++a) {
-
-}
-
-/* Better, if inc may not happen in every cycle */
-for (size_t a = 0; a < 10; ) {
-    if (...) {
-        ++a;
-    }
-}
-```
-
-### Switch statement
-
-- Add *single indent* for every `case` statement
-- Use additional *single indent* for `break` statement in each `case` or `default`
-```c
-/* OK, every case has single indent */
-/* OK, every break has additional indent */
-switch (check()) {
-    case 0:
-        do_a();
-        break;
-    case 1:
-        do_b();
-        break;
-    default:
-        break;
-}
-
-/* Wrong, case indent missing */
-switch (check()) {
-case 0:
-    do_a();
-    break;
-case 1:
-    do_b();
-    break;
-default:
-    break;
-}
-
-/* Wrong */
-switch (check()) {
-    case 0:
-        do_a();
-    break;      /* Wrong, break must have indent as it is under case */
-    case 1:
-    do_b();     /* Wrong, indent under case is missing */
-    break;
-    default:
-        break;
-}
-```
-
-- Always include `default` statement
-```c
-/* OK */
-switch (var) {
-    case 0:
-        do_job();
-        break;
-    default:
-        break;
-}
-
-/* Wrong, default is missing */
-switch (var) {
-    case 0:
-        do_job();
-        break;
-}
-```
-
-- If local variables are required, use curly brackets and put `break` statement inside.
-    - Put opening curly bracket in the same line as `case` statement
-```c
-switch (a) {
-    /* OK */
-    case 0: {
-        int32_t a, b;
-        char c;
-        a = 5;
-        /* ... */
-        break;
-    }
-
-    /* Wrong */
-    case 1:
-    {
-        int32_t a;
-        break;
-    }
-
-    /* Wrong, break shall be inside */
-    case 2: {
-        int32_t a;
-    }
-    break;
-}
-```
-
-## Macros and preprocessor directives
-
-- Always use macros instead of literal constants, specially for numbers
-- All macros must be fully uppercase, with optional underscore `_` character, except if they are clearly marked as function which may be in the future replaced with regular function syntax
-```c
-/* OK */
-#define MY_MACRO(x)         ((x) * (x))
-
-/* Wrong */
-#define square(x)           ((x) * (x))
-```
-
-- Always protect input parameters with parentheses
-```c
-/* OK */
-#define MIN(x, y)           ((x) < (y) ? (x) : (y))
-
-/* Wrong */
-#define MIN(x, y)           x < y ? x : y
-```
-
-- Always protect final macro evaluation with parenthesis
-```c
-/* Wrong */
-#define MIN(x, y)           (x) < (y) ? (x) : (y)
-#define SUM(x, y)           (x) + (y)
-
-/* Imagine result of this equation using wrong SUM implementation */
-int32_t x = 5 * SUM(3, 4);  /* Expected result is 5 * 7 = 35 */
-int32_t x = 5 * (3) + (4);  /* It is evaluated to this, final result = 19 which is not what we expect */
-
-/* Correct implementation */
-#define MIN(x, y)           ((x) < (y) ? (x) : (y))
-#define SUM(x, y)           ((x) + (y))
-```
-
-- When macro uses multiple statements, protect it using `do-while (0)` statement
-```c
+/* Option 2 - typedef only */
 typedef struct {
-    int32_t px, py;
-} point_t;
-point_t p;                  /* Define new point */
+    int32_t value;
+} config_t;
 
-/* Wrong implementation */
+/* Option 3 - name + typedef */
+typedef struct config {
+    int32_t value;
+} config_t;
+```
 
-/* Define macro to set point */
-#define SET_POINT(p, x, y)  (p)->px = (x); (p)->py = (y)    /* 2 statements. Last one should not implement semicolon */
+## Compound Statements
+- **Every compound statement MUST include curly brackets**
+- **Single statement also requires brackets**
+- **Empty loops must include brackets**
 
-SET_POINT(&p, 3, 4);        /* Set point to position 3, 4. This evaluates to... */
-(&p)->px = (3); (&p)->py = (4); /* ... to this. In this example this is not a problem. */
+```c
+/* OK */
+if (condition) {
+    do_something();
+}
 
-/* Consider this ugly code, however it is valid by C standard (not recommended) */
-if (a)                      /* If a is true */
-    if (b)                  /* If b is true */
-        SET_POINT(&p, 3, 4);/* Set point to x = 3, y = 4 */
-    else
-        SET_POINT(&p, 5, 6);/* Set point to x = 5, y = 6 */
+/* Wrong */
+if (condition)        /* Missing brackets */
+    do_something();
+```
 
-/* Evaluates to code below. Do you see the problem? */
-if (a)
-    if (b)
-        (&p)->px = (3); (&p)->py = (4);
-    else
-        (&p)->px = (5); (&p)->py = (6);
+### Switch Statements
+- **Single indent for each case**
+- **Additional indent for break**
+- **Always include default case**
 
-/* Or if we rewrite it a little */
-if (a)
-    if (b)
-        (&p)->px = (3);
-        (&p)->py = (4);
-    else
-        (&p)->px = (5);
-        (&p)->py = (6);
-
-/*
- * Ask yourself a question: To which `if` statement `else` keyword belongs?
- *
- * Based on first part of code, answer is straight-forward. To inner `if` statement when we check `b` condition
- * Actual answer: Compilation error as `else` belongs nowhere
- */
-
-/* Better and correct implementation of macro */
-#define SET_POINT(p, x, y)  do { (p)->px = (x); (p)->py = (y); } while (0)    /* 2 statements. No semicolon after while loop */
-/* Or even better */
-#define SET_POINT(p, x, y)  do {    \   /* Backslash indicates statement continues in new line */
-    (p)->px = (x);                  \
-    (p)->py = (y);                  \
-} while (0)                             /* 2 statements. No semicolon after while loop */
-
-/* Now original code evaluates to */
-if (a)
-    if (b)
-        do { (&p)->px = (3); (&p)->py = (4); } while (0);
-    else
-        do { (&p)->px = (5); (&p)->py = (6); } while (0);
-
-/* Every part of `if` or `else` contains only `1` inner statement (do-while), hence this is valid evaluation */
-
-/* To make code perfect, use brackets for every if-ifelse-else statements */
-if (a) {                    /* If a is true */
-    if (b) {                /* If b is true */
-        SET_POINT(&p, 3, 4);/* Set point to x = 3, y = 4 */
-    } else {
-        SET_POINT(&p, 5, 6);/* Set point to x = 5, y = 6 */
-    }
+```c
+switch (value) {
+    case 0:
+        do_action();
+        break;
+    case 1:
+        do_other();
+        break;
+    default:
+        handle_error();
+        break;
 }
 ```
 
-- Avoid using `#ifdef` or `#ifndef`. Use `defined()` or `!defined()` instead
-```c
-#ifdef XYZ
-/* do something */
-#endif /* XYZ */
-```
+## Macros and Preprocessor Directives
+- **Macros UPPER_SNAKE_CASE**
+- **Protect all parameters and result with parentheses**
+- **Multi-statement macros: use `do {} while (0)`**
 
-- Always document `if/elif/else/endif` statements
 ```c
 /* OK */
-#if defined(XYZ)
-/* Do if XYZ defined */
-#else /* defined(XYZ) */
-/* Do if XYZ not defined */
-#endif /* !defined(XYZ) */
+#define MIN(x, y)       ((x) < (y) ? (x) : (y))
+#define SET_FLAG(flag)  do { flag = 1; } while (0)
 
 /* Wrong */
-#if defined(XYZ)
-/* Do if XYZ defined */
-#else
-/* Do if XYZ not defined */
-#endif
-```
-
-- Do not indent sub statements inside `#if` statement
-```c
-/* OK */
-#if defined(XYZ)
-#if defined(ABC)
-/* do when ABC defined */
-#endif /* defined(ABC) */
-#else /* defined(XYZ) */
-/* Do when XYZ not defined */
-#endif /* !defined(XYZ) */
-
-/* Wrong */
-#if defined(XYZ)
-    #if defined(ABC)
-        /* do when ABC defined */
-    #endif /* defined(ABC) */
-#else /* defined(XYZ) */
-    /* Do when XYZ not defined */
-#endif /* !defined(XYZ) */
+#define MIN(x, y)       x < y ? x : y          /* Missing parentheses */
 ```
 
 ## Documentation
+- **Use doxygen-style documentation with `\brief`, `\param`, `\return`**
+- **Document all public functions, structures, variables**
+- **Use `/*!<` for inline member documentation**
 
-Documented code allows doxygen to parse and general html/pdf/latex output, thus it is very important to do it properly.
-
-- Use doxygen-enabled documentation style for `variables`, `functions` and `structures/enumerations`
-- Always use `\` for doxygen, do not use `@`
-- Always use `5x4` spaces (`5` tabs) offset from beginning of line for text
 ```c
 /**
- * \brief           Holds pointer to first entry in linked list
- *                  Beginning of this text is 5 tabs (20 spaces) from beginning of line
- */
-static
-type_t* list;
-```
-
-- Every structure/enumeration member must include documentation
-- Always aligin documentation text with 1 space
-```c
-/**
- * \brief           This is point struct
- * \note            This structure is used to calculate all point
- *                      related stuff
- */
-typedef struct {
-    int32_t x;    /*!< Point X coordinate */
-    int32_t y;    /*!< Point Y coordinate */
-    int32_t size; /*!< Point size.
-                       Since comment is very big,
-                       you may go to next line */
-} point_t;
-
-/**
- * \brief           Point color enumeration
- */
-typedef enum {
-    COLOR_RED,   /*!< Red color. This comment has aligin
-                      with 1 space. 
-                 */
-    COLOR_GREEN, /*!< Green color */
-    COLOR_BLUE,  /*!< Blue color */
-} point_color_t;
-```
-
-- Documentation for functions must be written in function implementation (source file usually)
-- Function must include `brief` and all parameters documentation
-- Every parameter must be noted if it is `in` or `out` for *input* and *output* respectively
-- Function must include `return` parameter if it returns something. This does not apply for `void` functions
-- Function can include other doxygen keywords, such as `note` or `warning`
-- Use colon `:` between parameter name and its description
-```c
-/**
- * \brief           Sum `2` numbers
- * \param[in]       a: First number
- * \param[in]       b: Second number
- * \return          Sum of input values
+ * \brief           Initialize the system
+ * \param[in]       config: System configuration
+ * \return          0 on success, error code otherwise
  */
 int32_t
-sum(int32_t a, int32_t b) {
-    return a + b;
-}
+system_init(const config_t* config);
 
 /**
- * \brief           Sum `2` numbers and write it to pointer
- * \note            This function does not return value, it stores it to pointer instead
- * \param[in]       a: First number
- * \param[in]       b: Second number
- * \param[out]      result: Output variable used to save result
+ * \brief           System configuration structure
  */
-void void_sum(int32_t a, int32_t b, int32_t* result) {
-    *result = a + b;
-}
+typedef struct {
+    int32_t timeout;                    /*!< Timeout in milliseconds */
+    bool enable_debug;                  /*!< Enable debug mode */
+} config_t;
 ```
 
-- If function returns member of enumeration, use `ref` keyword to specify which one
+## Header/Source Files
+- **Every file must include doxygen file header**
+- **Header files must include guard and C++ check**
+- **Include order: standard library first, then project headers**
+
 ```c
 /**
- * \brief           My enumeration
+ * \file            example.h
+ * \brief           Example header file
  */
-typedef enum {
-    MY_ERR, /*!< Error value */
-    MY_OK   /*!< OK value */
-} my_enum_t;
 
-/**
- * \brief           Check some value
- * \return          \ref MY_OK on success, member of \ref my_enum_t otherwise
- */
-my_enum_t check_value(void) {
-    return MY_OK;
-}
-```
+#ifndef EXAMPLE_HDR_H
+#define EXAMPLE_HDR_H
 
-- Use notation (\`NULL\` => `NULL`) for constants or numbers
-```c
-/**
- * \brief           Get data from input array
- * \param[in]       in: Input data
- * \return          Pointer to output data on success, `NULL` otherwise
- */
-const void* get_data(const void* in) {
-    return in;
-}
-```
-
-- Documentation for macros must include `hideinitializer` doxygen command
-```c
-/**
- * \brief           Get minimal value between `x` and `y`
- * \param[in]       x: First value
- * \param[in]       y: Second value
- * \return          Minimal value between `x` and `y`
- * \hideinitializer
- */
-#define MIN(x, y)       ((x) < (y) ? (x) : (y))
-```
-
-## Header/source files
-
-- Leave single empty line at the end of file
-- Every file must include doxygen annotation for `file` and `brief` description followed by empty line (when using doxygen)
-```c
-/**
- * \file
- * \brief           Template include file
- * \copyright       DC Vostok, Vladivostok 2023 
- */
-                    /* Here is empty line */
-```
-
-- Header file must include guard `#ifndef`
-- Header file must include `C++` check
-- Include external header files outside `C++` check
-- Include external header files with STL C files first followed by application custom files
-- Header file must include only every other header file in order to compile correctly, but not more (.c should include the rest if required)
-- Header file must only expose module public variables/types/functions
-- Use `extern` for global module variables in header file, define them in source file later
-```
-/* file.h ... */
-#ifndef ...
-
-extern int32_t my_variable; /* This is global variable declaration in header */
-
-#endif
-
-/* file.c ... */
-int32_t my_variable;        /* Actually defined in source */
-```
-- Never include `.c` files in another `.c` file
-- `.c` file should first include corresponding `.h` file, later others, unless otherwise explicitly necessary
-- Do not include module private declarations in header file
-
-- Header file example (no license for sake of an example)
-```c
-/* License comes here */
-#ifndef TEMPLATE_HDR_H
-#define TEMPLATE_HDR_H
-
-/* Include headers */
+#include <stdint.h>
+#include "project_types.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
-/* File content here */
+/* Declarations here */
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif
 
-#endif /* TEMPLATE_HDR_H */
+#endif
 ```
-## .clang-format file
- Add .clang-format file to project directory.
+
+## Key Compliance Points
+
+### MISRA C:2023 Critical Rules
+- **Rule 21.3:** Dynamic memory allocation forbidden
+- **Rule 17.2:** Recursion forbidden  
+- **Rule 1.1:** Avoid undefined behavior
+- **Rules 5.1-5.5:** Identifier requirements
+
+### Barr-C:2018 Critical Rules
+- **Rule 3.2:** Initialize all variables
+- **Rule 7.1f, 7.1h:** Identifier naming
+- **Rule 1.1d:** Prefer small functions
+- **Rule 3.3:** Separate implementation from interface
+
+### Critical Forbidden Practices
+1. **Dynamic memory:** `malloc`, `free`, `calloc`, `realloc`
+2. **VLA:** Variable Length Arrays
+3. **Recursion:** All recursive functions
+4. **Boolean comparison:** `== true`, `== false`
+5. **Uninitialized variables:** Any variable used before initialization
+6. **Magic numbers:** Undefined constants without `#define`
+
+### Required Practices
+1. **Static initialization:** All variables initialized at declaration
+2. **Type safety:** Use stdint.h types, explicit casting
+3. **Documentation:** All public interfaces documented with Doxygen
+4. **Error handling:** All non-trivial functions return error codes
+5. **Bounds checking:** All array accesses must be bounds-checked
+
+## Summary
+
+This coding standard ensures compliance with both Barr-C:2018 and MISRA C:2023 by:
+
+- **Eliminating undefined behavior** through proper initialization and type usage
+- **Preventing common C pitfalls** by forbidding dynamic memory and VLA
+- **Ensuring code clarity** through consistent naming and formatting
+- **Enabling static analysis** through deterministic patterns
+- **Supporting maintainability** through comprehensive documentation
+
+All code must pass MISRA C:2023 compliance checking and static analysis to be considered acceptable for production use in safety-critical embedded systems.
+
