@@ -1,10 +1,10 @@
 /**
- * \file            template.c
- * \brief           Template source file
+ * \file            template_compliant.c
+ * \brief           Template source file compliant with Barr-C:2018 and MISRA C:2023
  */
 
 /*
- * Copyright (c) 2022 Liamaev Mikhail
+ * Copyright (c) 2025 Liamaev Mikhail
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,17 +29,59 @@
  * This file is part of my_library.
  *
  * Author:          Liamaev Mikhail <misha25_live@mail.ru>
- * Version:         v1.y.z
+ * Version:         v1.0.0
  */
-#include "template.h"
+
+/*=========================== Includes =========================================*/
+#include <stdint.h>
+#include "template_compliant.h"
+
+/*=========================== Defines =========================================*/
+
+/*=========================== Typedefs ========================================*/
+
+/*=========================== Variables =======================================*/
+
+/*=========================== Static Functions ================================*/
+
+/*=========================== Public Functions ===============================*/
 
 /**
- * \brief           Sum `2` numbers
- * \param[in]       a: First value
- * \param[in]       b: Second value
- * \return          Sum of input values
+ * \brief           Calculate the sum of two signed 32-bit integers
+ * \param[in]       a: First addend value
+ * \param[in]       b: Second addend value
+ * \return          Result of addition operation as signed 32-bit integer
+ * \note            This function performs simple integer addition without
+ *                  overflow detection. For production use, consider adding
+ *                  overflow checking mechanisms.
  */
-int32_t sum(int32_t a, int32_t b)
-{
-    return a + b;
+int32_t 
+sum_two_numbers(int32_t a, int32_t b) {
+    return (a + b);
+}
+
+/**
+ * \brief           Calculate the difference of two signed 32-bit integers
+ * \param[in]       a: Minuend value
+ * \param[in]       b: Subtrahend value
+ * \return          Result of subtraction operation as signed 32-bit integer
+ */
+int32_t 
+subtract_two_numbers(int32_t a, int32_t b) {
+    return (a - b);
+}
+
+/**
+ * \brief           Calculate the maximum of two signed 32-bit integers
+ * \param[in]       a: First value for comparison
+ * \param[in]       b: Second value for comparison
+ * \return          Maximum value between a and b as signed 32-bit integer
+ */
+int32_t 
+find_maximum(int32_t a, int32_t b) {
+    if (a >= b) {
+        return a;
+    } else {
+        return b;
+    }
 }
