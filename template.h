@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2022 Liamaev Mikhail
+ * Copyright (c) 2025 Liamaev Mikhail
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -37,13 +37,44 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
-    /* Function prototypes, name aligned, lowercase names */
-    int32_t sum(int32_t a, int32_t b);
-    int32_t divide(int32_t a, int32_t b);
+/**
+ * \brief           Error codes enumeration
+ * \note            Used for all function error reporting
+ */
+typedef enum {
+    ERROR_NONE = 0,           /*!< No error */
+    ERROR_NULL_POINTER,       /*!< Null pointer passed */
+    ERROR_DIVISION_BY_ZERO,   /*!< Division by zero attempted */
+    ERROR_INVALID_PARAMETER   /*!< Invalid parameter value */
+} error_code_t;
+
+/**
+ * \brief           Sum two integers
+ * \param[in]       a: First integer value
+ * \param[in]       b: Second integer value
+ * \param[out]      result: Pointer to store the sum result
+ * \return          \ref ERROR_NONE on success, error code otherwise
+ * \note            Both input parameters must be valid integers
+ */
+error_code_t
+sum(int32_t a, int32_t b, int32_t* result);
+
+/**
+ * \brief           Divide two integers with error checking
+ * \param[in]       a: Dividend value
+ * \param[in]       b: Divisor value
+ * \param[out]      result: Pointer to store the division result
+ * \return          \ref ERROR_NONE on success, \ref ERROR_DIVISION_BY_ZERO 
+ *                  if divisor is zero, other error codes for invalid parameters
+ * \note            Divisor must not be zero to avoid undefined behavior
+ * \warning         This function prevents division by zero which causes 
+ *                  undefined behavior in C
+ */
+error_code_t
+divide(int32_t a, int32_t b, int32_t* result);
 
 #ifdef __cplusplus
 }
