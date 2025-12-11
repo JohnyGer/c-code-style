@@ -1,6 +1,6 @@
 /**
- * \file            template.h
- * \brief           Template header file
+ * \file            template_compliant.h
+ * \brief           Template header file compliant with Barr-C:2018 and MISRA C:2023
  */
 
 /*
@@ -26,58 +26,63 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- * This file is part of your_library_name.
+ * This file is part of my_library.
  *
- * Author:          Liamaev Mikhail <tilen@majerle.eu>
- * Version:         $_version_$
+ * Author:          Liamaev Mikhail <misha25_live@mail.ru>
+ * Version:         v1.0.0
  */
-#ifndef TEMPLATE_HDR_H
-#define TEMPLATE_HDR_H
 
-#include <stdint.h>
+#ifndef TEMPLATE_COMPLIANT_H
+#define TEMPLATE_COMPLIANT_H
 
+/*=========================== C++ Compatibility ===============================*/
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-/**
- * \brief           Error codes enumeration
- * \note            Used for all function error reporting
- */
-typedef enum {
-    ERROR_NONE = 0,           /*!< No error */
-    ERROR_NULL_POINTER,       /*!< Null pointer passed */
-    ERROR_DIVISION_BY_ZERO,   /*!< Division by zero attempted */
-    ERROR_INVALID_PARAMETER   /*!< Invalid parameter value */
-} error_code_t;
+/*=========================== Includes =========================================*/
+#include <stdint.h>
+
+/*=========================== Defines =========================================*/
+
+/*=========================== Typedefs ========================================*/
+
+/*=========================== Variables =======================================*/
+
+/*=========================== Functions =======================================*/
 
 /**
- * \brief           Sum two integers
- * \param[in]       a: First integer value
- * \param[in]       b: Second integer value
- * \param[out]      result: Pointer to store the sum result
- * \return          \ref ERROR_NONE on success, error code otherwise
- * \note            Both input parameters must be valid integers
+ * \brief           Calculate the sum of two signed 32-bit integers
+ * \param[in]       a: First addend value
+ * \param[in]       b: Second addend value
+ * \return          Result of addition operation as signed 32-bit integer
+ * \note            This function performs simple integer addition without
+ *                  overflow detection. For production use, consider adding
+ *                  overflow checking mechanisms.
  */
-error_code_t
-sum(int32_t a, int32_t b, int32_t* result);
+int32_t 
+sum_two_numbers(int32_t a, int32_t b);
 
 /**
- * \brief           Divide two integers with error checking
- * \param[in]       a: Dividend value
- * \param[in]       b: Divisor value
- * \param[out]      result: Pointer to store the division result
- * \return          \ref ERROR_NONE on success, \ref ERROR_DIVISION_BY_ZERO 
- *                  if divisor is zero, other error codes for invalid parameters
- * \note            Divisor must not be zero to avoid undefined behavior
- * \warning         This function prevents division by zero which causes 
- *                  undefined behavior in C
+ * \brief           Calculate the difference of two signed 32-bit integers
+ * \param[in]       a: Minuend value
+ * \param[in]       b: Subtrahend value
+ * \return          Result of subtraction operation as signed 32-bit integer
  */
-error_code_t
-divide(int32_t a, int32_t b, int32_t* result);
+int32_t 
+subtract_two_numbers(int32_t a, int32_t b);
+
+/**
+ * \brief           Calculate the maximum of two signed 32-bit integers
+ * \param[in]       a: First value for comparison
+ * \param[in]       b: Second value for comparison
+ * \return          Maximum value between a and b as signed 32-bit integer
+ */
+int32_t 
+find_maximum(int32_t a, int32_t b);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* TEMPLATE_HDR_H */
+#endif /* TEMPLATE_COMPLIANT_H */
