@@ -1,7 +1,4 @@
-# Recommended C style and coding rules for embedded system
-This document describes C code style used by DC Vostok in his projects and libraries.
-
-# Recommended C Style and Coding Rules (Barr-C:2018 and MISRA C:2023 Compliant)
+# Recommended C Style and Coding Rules for Embedded System(Barr-C:2018 and MISRA C:2023 Compliant)
 
 ## General Rules
 
