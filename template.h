@@ -32,8 +32,8 @@
  * Version:         v1.0.0
  */
 
-#ifndef TEMPLATE_COMPLIANT_H_
-#define TEMPLATE_COMPLIANT_H_
+#ifndef TEMPLATE_H_
+#define TEMPLATE_H_
 
 /*--------------------------- C++ Compatibility -------------------------------*/
 #ifdef __cplusplus
@@ -85,4 +85,4 @@ find_maximum(int32_t a, int32_t b);
 }
 #endif /* __cplusplus */
 
-#endif /* TEMPLATE_COMPLIANT_H_ */
+#endif /* TEMPLATE_H_ */
